@@ -1,8 +1,8 @@
 # Huawei Cloud OBS for Laravel
 
-[Huawei Cloud OBS](https://support.huaweicloud.com/devg-obs_php_sdk_doc_zh/zh-cn_topic_0132036136.html) storage for Laravel based on [dscmall/laravel-filesystem-obs](https://github.com/dscmall/laravel-filesystem-obs).
+[Huawei Cloud OBS](https://support.huaweicloud.com/devg-obs_php_sdk_doc_zh/zh-cn_topic_0132036136.html) storage for Laravel based on [cloudycity/laravel-filesystem-obs](https://github.com/cloudycity/laravel-filesystem-obs).
 
-[大商创技术团队](http://www.dscmall.cn)
+Only compatible with Guzzle v7. If you must use Guzzle v6, check this out [dscmall/laravel-filesystem-obs](https://github.com/dscmall/laravel-filesystem-obs).
 
 # Requirement
 
@@ -11,12 +11,13 @@
 # Installation
 
 ```shell
-$ composer require "dscmall/laravel-filesystem-obs" -vvv
+$ composer require "cloudycity/laravel-filesystem-obs" -vvv
 ```
 
 # Configuration
 
-1. After installing the library, register the `Obs\ObsServiceProvider` in your `config/app.php` file:
+
+1.(Optional) If you are using laravel which version < 5.5, you need register the `Obs\ObsServiceProvider` in your `config/app.php` file:
 
   ```php
   'providers' => [
@@ -25,8 +26,14 @@ $ composer require "dscmall/laravel-filesystem-obs" -vvv
   ],
   ```
 
-2. Add a new disk to your `config/filesystems.php` config:
- ```php
+2.Publish config.php or create it manually.
+
+```shell
+php artisan vendor:publish --provider="Obs\ObsServiceProvider" --tag=filesystems-config
+```
+
+`config/filesystems.php`
+```php
  <?php
 
  return [
@@ -88,5 +95,4 @@ $url = $disk->privateDownloadUrl('folder/my_file.txt');
 [Full API documentation.](http://flysystem.thephpleague.com/api/)
 
 # License
-
 MIT

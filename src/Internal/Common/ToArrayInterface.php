@@ -7,10 +7,10 @@ namespace Obs\Internal\Common;
  */
 interface ToArrayInterface
 {
-	/**
-	 * Get the array representation of an object
-	 *
-	 * @return array
-	 */
-	public function toArray();
+    /**
+     * Get the array representation of an object
+     *
+     * @return array
+     */
+    public function toArray();
 }

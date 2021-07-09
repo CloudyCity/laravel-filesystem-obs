@@ -80,7 +80,7 @@ class ObsException extends RuntimeException
 
     public function getExceptionMessage()
     {
-        return $this->exceptionMessage ? $this->exceptionMessage : $this->message;
+        return $this->exceptionMessage ?: $this->message;
     }
 
     /**
@@ -156,7 +156,7 @@ class ObsException extends RuntimeException
     /**
      * Get the associated request object
      *
-     * @return RequestInterface|null
+     * @return Request
      */
     public function getRequest()
     {
@@ -194,7 +194,7 @@ class ObsException extends RuntimeException
             . 'OBS Error Code: ' . $this->getExceptionCode() . ', '
             . 'Status Code: ' . $this->getStatusCode() . ', '
             . 'OBS Error Type: ' . $this->getExceptionType() . ', '
-            . 'OBS Error Message: ' . ($this->getExceptionMessage() ? $this->getExceptionMessage() : $this->getMessage());
+            . 'OBS Error Message: ' . ($this->getExceptionMessage() ?: $this->getMessage());
 
         // Add the User-Agent if available
         if ($this->request) {

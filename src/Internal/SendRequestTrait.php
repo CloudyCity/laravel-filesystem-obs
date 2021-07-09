@@ -10,12 +10,13 @@ use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Exception\ConnectException;
 use Illuminate\Support\Facades\Log;
 use Obs\Internal\Common\Model;
+use Obs\Internal\Resource\OBSRequestResource;
 use Obs\Internal\Resource\V2Constants;
+use Obs\Internal\Resource\V2RequestResource;
 use Obs\ObsException;
 use Obs\Internal\Signature\V4Signature;
 use Obs\Internal\Signature\DefaultSignature;
 use Obs\Internal\Resource\Constants;
-use Obs\Internal\Resource\V2RequestResource;
 use Psr\Http\Message\StreamInterface;
 
 trait SendRequestTrait
@@ -60,7 +61,7 @@ trait SendRequestTrait
         return $this->createCommonSignedUrl($args, 'v2');
     }
 
-    private function createCommonSignedUrl(array $args = [], $signature)
+    private function createCommonSignedUrl(array $args, $signature)
     {
         if (!isset($args['Method'])) {
             $obsException = new ObsException('Method param must be specified, allowed values: GET | PUT | HEAD | POST | DELETE | OPTIONS');
@@ -145,14 +146,14 @@ trait SendRequestTrait
             $result .= '&';
         }
 
-        $canonicalstring = $sign->makeCanonicalstring($method, $headers, $_queryParams, $bucketName, $objectKey, $expires);
+        $canonicalstring = $sign->makeCanonicalString($method, $headers, $_queryParams, $bucketName, $objectKey, $expires);
         $signatureContent = base64_encode(hash_hmac('sha1', $canonicalstring, $this->sk, true));
 
         $result .= 'Signature=' . $sign->urlencodeWithSafe($signatureContent);
 
         $model = new Model();
         $model['ActualSignedRequestHeaders'] = $headers;
-        $model['SignedUrl'] = $url['scheme'] . '://' . $host . ':' . (isset($url['port']) ? $url['port'] : (strtolower($url['scheme']) === 'https' ? '443' : '80')) . $result;
+        $model['SignedUrl'] = $url['scheme'] . '://' . $host . ':' . ($url['port'] ?? (strtolower($url['scheme']) === 'https' ? '443' : '80')) . $result;
         return $model;
     }
 
@@ -222,7 +223,7 @@ trait SendRequestTrait
 
         $expires = strval($expires);
 
-        $date = isset($headers['date']) ? $headers['date'] : (isset($headers['Date']) ? $headers['Date'] : null);
+        $date = $headers['date'] ?? ($headers['Date'] ?? null);
 
         $timestamp = $date ? date_create_from_format('D, d M Y H:i:s \G\M\T', $date, new \DateTimeZone ('UTC'))->getTimestamp()
             : time();
@@ -259,7 +260,7 @@ trait SendRequestTrait
             $result .= '&';
         }
 
-        $canonicalstring = $v4->makeCanonicalstring($method, $headers, $_queryParams, $bucketName, $objectKey, $signedHeaders, 'UNSIGNED-PAYLOAD');
+        $canonicalstring = $v4->makeCanonicalString($method, $headers, $_queryParams, $bucketName, $objectKey, $signedHeaders, 'UNSIGNED-PAYLOAD');
 
         $signatureContent = $v4->getSignature($canonicalstring, $longDate, $shortDate);
 
@@ -267,7 +268,7 @@ trait SendRequestTrait
 
         $model = new Model();
         $model['ActualSignedRequestHeaders'] = $headers;
-        $model['SignedUrl'] = $url['scheme'] . '://' . $host . ':' . (isset($url['port']) ? $url['port'] : (strtolower($url['scheme']) === 'https' ? '443' : '80')) . $result;
+        $model['SignedUrl'] = $url['scheme'] . '://' . $host . ':' . ($url['port'] ?? (strtolower($url['scheme']) === 'https' ? '443' : '80')) . $result;
         return $model;
     }
 
@@ -462,10 +463,14 @@ trait SendRequestTrait
         return $model;
     }
 
+    /**
+     * @throws \Exception
+     */
     public function __call($originMethod, $args)
     {
         $method = $originMethod;
 
+        /** @var OBSRequestResource|V2RequestResource $contents */
         $contents = Constants::selectRequestResource($this->signature);
         $resource = &$contents::$RESOURCE_ARRAY;
         $async = false;
@@ -481,8 +486,7 @@ trait SendRequestTrait
         $method = lcfirst($method);
 
 
-        $operation = isset($resource['operations'][$method]) ?
-            $resource['operations'][$method] : null;
+        $operation = $resource['operations'][$method] ?? null;
 
         if (!$operation) {
             Log::warning('unknow method ' . $originMethod);
@@ -523,11 +527,11 @@ trait SendRequestTrait
         // fix bug that guzzlehttp lib will add the content-type if not set
         if (($method === 'putObject' || $method === 'initiateMultipartUpload' || $method === 'uploadPart') && (!isset($params['ContentType']) || $params['ContentType'] === null)) {
             if (isset($params['Key'])) {
-                $params['ContentType'] = Psr7\mimetype_from_filename($params['Key']);
+                $params['ContentType'] = Psr7\MimeType::fromFilename($params['Key']);
             }
 
             if ((!isset($params['ContentType']) || $params['ContentType'] === null) && isset($params['SourceFile'])) {
-                $params['ContentType'] = Psr7\mimetype_from_filename($params['SourceFile']);
+                $params['ContentType'] = Psr7\MimeType::fromFilename($params['SourceFile']);
             }
 
             if (!isset($params['ContentType']) || $params['ContentType'] === null) {
@@ -536,7 +540,10 @@ trait SendRequestTrait
         }
     }
 
-    protected function makeRequest($model, &$operation, $params, $endpoint = null)
+    /**
+     * @throws \Exception
+     */
+    protected function makeRequest($model, $operation, $params, $endpoint = null)
     {
         if ($endpoint === null) {
             $endpoint = $this->endpoint;
@@ -557,18 +564,21 @@ trait SendRequestTrait
     }
 
 
-    protected function doRequest($model, &$operation, $params, $endpoint = null)
+    /**
+     * @throws \Exception
+     */
+    protected function doRequest($model, $operation, $params, $endpoint = null)
     {
         $request = $this->makeRequest($model, $operation, $params, $endpoint);
         $this->sendRequest($model, $operation, $params, $request);
     }
 
-    protected function sendRequest($model, &$operation, $params, $request, $requestCount = 1)
+    protected function sendRequest($model, $operation, $params, $request, $requestCount = 1)
     {
         $start = microtime(true);
         $saveAsStream = false;
         if (isset($operation['stream']) && $operation['stream']) {
-            $saveAsStream = isset($params['SaveAsStream']) ? $params['SaveAsStream'] : false;
+            $saveAsStream = $params['SaveAsStream'] ?? false;
 
             if (isset($params['SaveAsFile'])) {
                 if ($saveAsStream) {
@@ -605,10 +615,10 @@ trait SendRequestTrait
                     if ($location = $response->getHeaderLine('location')) {
                         $url = parse_url($this->endpoint);
                         $newUrl = parse_url($location);
-                        $scheme = (isset($newUrl['scheme']) ? $newUrl['scheme'] : $url['scheme']);
+                        $scheme = ($newUrl['scheme'] ?? $url['scheme']);
                         $defaultPort = strtolower($scheme) === 'https' ? '443' : '80';
                         $this->doRequest($model, $operation, $params, $scheme . '://' . $newUrl['host'] .
-                            ':' . (isset($newUrl['port']) ? $newUrl['port'] : $defaultPort));
+                            ':' . ($newUrl['port'] ?? $defaultPort));
                         return;
                     }
                 }
@@ -631,19 +641,22 @@ trait SendRequestTrait
     }
 
 
-    protected function doRequestAsync($model, &$operation, $params, $callback, $startAsync, $originMethod, $endpoint = null)
+    /**
+     * @throws \Exception
+     */
+    protected function doRequestAsync($model, $operation, $params, $callback, $startAsync, $originMethod, $endpoint = null)
     {
         $request = $this->makeRequest($model, $operation, $params, $endpoint);
         return $this->sendRequestAsync($model, $operation, $params, $callback, $startAsync, $originMethod, $request);
     }
 
-    protected function sendRequestAsync($model, &$operation, $params, $callback, $startAsync, $originMethod, $request, $requestCount = 1)
+    protected function sendRequestAsync($model, $operation, $params, $callback, $startAsync, $originMethod, $request, $requestCount = 1)
     {
         $start = microtime(true);
 
         $saveAsStream = false;
         if (isset($operation['stream']) && $operation['stream']) {
-            $saveAsStream = isset($params['SaveAsStream']) ? $params['SaveAsStream'] : false;
+            $saveAsStream = $params['SaveAsStream'] ?? false;
 
             if ($saveAsStream) {
                 if (isset($params['SaveAsFile'])) {
@@ -673,10 +686,10 @@ trait SendRequestTrait
                     if ($location = $response->getHeaderLine('location')) {
                         $url = parse_url($this->endpoint);
                         $newUrl = parse_url($location);
-                        $scheme = (isset($newUrl['scheme']) ? $newUrl['scheme'] : $url['scheme']);
+                        $scheme = ($newUrl['scheme'] ?? $url['scheme']);
                         $defaultPort = strtolower($scheme) === 'https' ? '443' : '80';
                         return $this->doRequestAsync($model, $operation, $params, $callback, $startAsync, $originMethod, $scheme . '://' . $newUrl['host'] .
-                            ':' . (isset($newUrl['port']) ? $newUrl['port'] : $defaultPort));
+                            ':' . ($newUrl['port'] ?? $defaultPort));
                     }
                 }
                 $this->parseResponse($model, $request, $response, $operation);

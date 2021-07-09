@@ -43,6 +43,9 @@ class ObsAdapter extends AbstractAdapter
      * ObsAdapter constructor.
      * @param ObsClient $client
      * @param string $bucket
+     * @param string $endpoint
+     * @param string $cdnDomain
+     * @param bool $ssl
      * @param string $prefix
      */
     public function __construct(ObsClient $client, string $bucket, string $endpoint, string $cdnDomain, bool $ssl, string $prefix = '')
@@ -165,7 +168,7 @@ class ObsAdapter extends AbstractAdapter
         $newpath = $this->applyPathPrefix($newpath);
 
         try {
-            $object = $this->client->deleteObject([
+            $this->client->deleteObject([
                 'Bucket' => $this->getBucket(),
                 'Key' => $newpath,
                 'CopySource' => $this->getBucket() . '/' . $path
@@ -186,7 +189,7 @@ class ObsAdapter extends AbstractAdapter
         $path = $this->applyPathPrefix($path);
 
         try {
-            $object = $this->client->deleteObject([
+            $this->client->deleteObject([
                 'Bucket' => $this->getBucket(),
                 'Key' => $path
             ]);
@@ -290,8 +293,6 @@ class ObsAdapter extends AbstractAdapter
      */
     public function listContents($directory = '', $recursive = false)
     {
-        $path = $this->applyPathPrefix($directory);
-
         try {
             $object = $this->client->listObjects([
                 'Bucket' => $this->getBucket(),
@@ -310,8 +311,7 @@ class ObsAdapter extends AbstractAdapter
         }
 
         return array_map(function ($entry) {
-            $path = $this->removePathPrefix($entry['Key']);
-            return $this->normalizeResponse($entry, $path);
+            return $this->normalizeResponse($entry);
         }, $contents);
     }
 

@@ -176,11 +176,10 @@ trait GetResponseTrait
         }
     }
 
-    private function writeFile($filePath, StreamInterface &$body, $contentLength)
+    private function writeFile($filePath, StreamInterface &$body)
     {
         $filePath = iconv('UTF-8', 'GBK', $filePath);
         if (is_string($filePath) && $filePath !== '') {
-            $fp = null;
             $dir = dirname($filePath);
             try {
                 if (!is_dir($dir)) {
@@ -288,7 +287,7 @@ trait GetResponseTrait
                         continue;
                     }
                     if (isset($value['type']) && $value['type'] === 'file') {
-                        $this->writeFile($value['value'], $body, $expectedLength);
+                        $this->writeFile($value['value'], $body);
                     }
                     $model[$key] = $value['value'];
                 }
@@ -322,7 +321,7 @@ trait GetResponseTrait
     protected function buildException(Request $request, RequestException $exception, $message)
     {
         $response = $exception->hasResponse() ? $exception->getResponse() : null;
-        $obsException = new ObsException($message ? $message : $exception->getMessage());
+        $obsException = new ObsException($message ?: $exception->getMessage());
         $obsException->setExceptionType('client');
         $obsException->setRequest($request);
         if ($response) {

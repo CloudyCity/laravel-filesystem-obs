@@ -53,6 +53,9 @@ abstract class AbstractSignature implements SignatureInterface
         $this->securityToken = $securityToken;
     }
 
+    /**
+     * @throws \Exception
+     */
     protected function transXmlByType($key, &$value, &$subParams, $transHolder)
     {
         $xml = [];
@@ -60,7 +63,7 @@ abstract class AbstractSignature implements SignatureInterface
         if (isset($value['type'])) {
             $type = $value['type'];
             if ($type === 'array') {
-                $name = isset($value['sentAs']) ? $value['sentAs'] : $key;
+                $name = $value['sentAs'] ?? $key;
                 $subXml = [];
                 foreach ($subParams as $item) {
                     $temp = $this->transXmlByType($key, $value['items'], $item, $transHolder);
@@ -78,7 +81,7 @@ abstract class AbstractSignature implements SignatureInterface
                     }
                 }
             } else if ($type === 'object') {
-                $name = isset($value['sentAs']) ? $value['sentAs'] : (isset($value['name']) ? $value['name'] : $key);
+                $name = $value['sentAs'] ?? ($value['name'] ?? $key);
                 $properties = $value['properties'];
                 $subXml = [];
                 $attr = [];
@@ -90,7 +93,7 @@ abstract class AbstractSignature implements SignatureInterface
                     }
                     if (isset($subParams[$pkey])) {
                         if (isset($pvalue['data']) && isset($pvalue['data']['xmlAttribute']) && $pvalue['data']['xmlAttribute']) {
-                            $attrValue = $this->xml_tansfer(trim(strval($subParams[$pkey])));
+                            $attrValue = $this->xml_transfer(trim(strval($subParams[$pkey])));
                             $attr[$pvalue['sentAs']] = '"' . $attrValue . '"';
                             if (isset($pvalue['data']['xmlNamespace'])) {
                                 $ns = substr($pvalue['sentAs'], 0, strpos($pvalue['sentAs'], ':'));
@@ -152,7 +155,7 @@ abstract class AbstractSignature implements SignatureInterface
                 }
             }
 
-            $name = isset($value['sentAs']) ? $value['sentAs'] : $key;
+            $name = $value['sentAs'] ?? $key;
             if (is_bool($subParams)) {
                 $val = $subParams ? 'true' : 'false';
             } else {
@@ -165,7 +168,7 @@ abstract class AbstractSignature implements SignatureInterface
                 $val = $transHolder->transform($value['transform'], $val);
             }
             if (isset($val) && $val !== '') {
-                $val = $this->xml_tansfer($val);
+                $val = $this->xml_transfer($val);
                 if (!isset($value['data']['xmlFlattened'])) {
                     $xml[] = '<' . $name . '>';
                     $xml[] = $val;
@@ -188,15 +191,18 @@ abstract class AbstractSignature implements SignatureInterface
         return $ret;
     }
 
-    private function xml_tansfer($tag)
+    private function xml_transfer($tag)
     {
         $search = array('&', '<', '>', '\'', '"');
-        $repalce = array('&amp;', '&lt;', '&gt;', '&apos;', '&quot;');
-        $transferXml = str_replace($search, $repalce, $tag);
+        $replace = array('&amp;', '&lt;', '&gt;', '&apos;', '&quot;');
+        $transferXml = str_replace($search, $replace, $tag);
         return $transferXml;
     }
 
-    protected function prepareAuth(array &$requestConfig, array &$params, Model $model)
+    /**
+     * @throws \Exception
+     */
+    protected function prepareAuth(array $requestConfig, array $params, Model $model)
     {
         $transHolder = strcasecmp($this->signature, 'obs') === 0 ? ObsTransform::getInstance() : V2Transform::getInstance();
         $method = $requestConfig['httpMethod'];
@@ -271,7 +277,7 @@ abstract class AbstractSignature implements SignatureInterface
                             }
                         } else if ($type === 'array') {
                             if (is_array($val)) {
-                                $name = isset($value['sentAs']) ? $value['sentAs'] : (isset($value['items']['sentAs']) ? $value['items']['sentAs'] : $key);
+                                $name = $value['sentAs'] ?? ($value['items']['sentAs'] ?? $key);
                                 $temp = [];
                                 foreach ($val as $v) {
                                     if (($v = strval($v)) !== '') {
@@ -282,8 +288,8 @@ abstract class AbstractSignature implements SignatureInterface
                             }
                         } else if ($type === 'password') {
                             if (($val = strval($val)) !== '') {
-                                $name = isset($value['sentAs']) ? $value['sentAs'] : $key;
-                                $pwdName = isset($value['pwdSentAs']) ? $value['pwdSentAs'] : $name . '-MD5';
+                                $name = $value['sentAs'] ?? $key;
+                                $pwdName = $value['pwdSentAs'] ?? $name . '-MD5';
                                 $val1 = base64_encode($val);
                                 $val2 = base64_encode(md5($val, true));
                                 $headers[$name] = $val1;
@@ -300,7 +306,7 @@ abstract class AbstractSignature implements SignatureInterface
                                     $val = strval($val);
                                 }
                                 if ($val !== '') {
-                                    $name = isset($value['sentAs']) ? $value['sentAs'] : $key;
+                                    $name = $value['sentAs'] ?? $key;
                                     if (isset($value['format'])) {
                                         $val = SchemaFormatter::format($value['format'], $val);
                                     }
@@ -313,7 +319,7 @@ abstract class AbstractSignature implements SignatureInterface
                     } else if ($location === 'dns' && $dnsParam === null) {
                         $dnsParam = $val;
                     } else if ($location === 'query') {
-                        $name = isset($value['sentAs']) ? $value['sentAs'] : $key;
+                        $name = $value['sentAs'] ?? $key;
                         if (strval($val) !== '') {
                             if (strcasecmp($this->signature, 'v4') === 0) {
                                 $pathArgs[rawurlencode($name)] = rawurlencode(strval($val));
@@ -360,7 +366,7 @@ abstract class AbstractSignature implements SignatureInterface
                 } else {
                     $defaultPort = strtolower($url['scheme']) === 'https' ? '443' : '80';
                     $host = $dnsParam . '.' . $host;
-                    $requestUrl = $url['scheme'] . '://' . $host . ':' . (isset($url['port']) ? $url['port'] : $defaultPort);
+                    $requestUrl = $url['scheme'] . '://' . $host . ':' . ($url['port'] ?? $defaultPort);
                 }
             }
             if ($uriParam) {

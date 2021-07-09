@@ -23,7 +23,7 @@ class SdkStreamHandler
      * Sends an HTTP request.
      *
      * @param RequestInterface $request Request to send.
-     * @param array            $options Request transfer options.
+     * @param array $options Request transfer options.
      *
      * @return PromiseInterface
      */
@@ -71,7 +71,8 @@ class SdkStreamHandler
         $startTime,
         ResponseInterface $response = null,
         $error = null
-    ) {
+    )
+    {
         if (isset($options['on_stats'])) {
             $stats = new TransferStats(
                 $request,
@@ -89,16 +90,17 @@ class SdkStreamHandler
         array $options,
         $stream,
         $startTime
-    ) {
+    )
+    {
         $hdrs = $this->lastHeaders;
         $this->lastHeaders = [];
         $parts = explode(' ', array_shift($hdrs), 3);
         $ver = explode('/', $parts[0])[1];
         $status = $parts[1];
-        $reason = isset($parts[2]) ? $parts[2] : null;
+        $reason = $parts[2] ?? null;
         $headers = \GuzzleHttp\headers_from_lines($hdrs);
         list ($stream, $headers) = $this->checkDecode($options, $headers, $stream);
-        $stream = Psr7\stream_for($stream);
+        $stream = Psr7\Utils::streamFor($stream);
         $sink = $stream;
 
         if (strcasecmp('HEAD', $request->getMethod())) {
@@ -125,7 +127,7 @@ class SdkStreamHandler
             );
         }
 
-        $this->invokeStats($options, $request, $startTime, $response, null);
+        $this->invokeStats($options, $request, $startTime, $response);
 
         return new FulfilledPromise($response);
     }
@@ -136,13 +138,11 @@ class SdkStreamHandler
             return $stream;
         }
 
-        $sink = isset($options['sink'])
-            ? $options['sink']
-            : fopen('php://temp', 'r+');
+        $sink = $options['sink'] ?? fopen('php://temp', 'r+');
 
         return is_string($sink)
             ? new Psr7\LazyOpenStream($sink, 'w+')
-            : Psr7\stream_for($sink);
+            : Psr7\Utils::streamFor($sink);
     }
 
     private function checkDecode(array $options, array $headers, $stream)
@@ -153,7 +153,7 @@ class SdkStreamHandler
                 $encoding = $headers[$normalizedKeys['content-encoding']];
                 if ($encoding[0] === 'gzip' || $encoding[0] === 'deflate') {
                     $stream = new Psr7\InflateStream(
-                        Psr7\stream_for($stream)
+                        Psr7\Utils::streamFor($stream)
                     );
                     $headers['x-encoded-content-encoding']
                         = $headers[$normalizedKeys['content-encoding']];
@@ -162,7 +162,7 @@ class SdkStreamHandler
                         $headers['x-encoded-content-length']
                             = $headers[$normalizedKeys['content-length']];
 
-                        $length = (int) $stream->getSize();
+                        $length = (int)$stream->getSize();
                         if ($length === 0) {
                             unset($headers[$normalizedKeys['content-length']]);
                         } else {
@@ -181,7 +181,7 @@ class SdkStreamHandler
      *
      * @param StreamInterface $source
      * @param StreamInterface $sink
-     * @param string          $contentLength Header specifying the amount of
+     * @param string $contentLength Header specifying the amount of
      *                                       data to read.
      *
      * @return StreamInterface
@@ -191,11 +191,12 @@ class SdkStreamHandler
         StreamInterface $source,
         StreamInterface $sink,
         $contentLength
-    ) {
-        Psr7\copy_to_stream(
+    )
+    {
+        Psr7\Utils::copyToStream(
             $source,
             $sink,
-            (strlen($contentLength) > 0 && (int) $contentLength > 0) ? (int) $contentLength : -1
+            (strlen($contentLength) > 0 && (int)$contentLength > 0) ? (int)$contentLength : -1
         );
 
         $sink->seek(0);
@@ -218,8 +219,8 @@ class SdkStreamHandler
         set_error_handler(function ($_, $msg, $file, $line) use (&$errors) {
             $errors[] = [
                 'message' => $msg,
-                'file'    => $file,
-                'line'    => $line
+                'file' => $file,
+                'line' => $line
             ];
             return true;
         });
@@ -258,7 +259,7 @@ class SdkStreamHandler
         }
 
         $params = [];
-        $context = $this->getDefaultContext($request, $options);
+        $context = $this->getDefaultContext($request);
 
         if (isset($options['on_headers']) && !is_callable($options['on_headers'])) {
             throw new \InvalidArgumentException('on_headers must be callable');
@@ -302,12 +303,12 @@ class SdkStreamHandler
 
         return $this->createResource(
             function () use ($uri, &$http_response_header, $context, $options) {
-                $resource = fopen((string) $uri, 'r', null, $context);
+                $resource = fopen((string)$uri, 'r', null, $context);
                 $this->lastHeaders = $http_response_header;
 
                 if (isset($options['read_timeout'])) {
                     $readTimeout = $options['read_timeout'];
-                    $sec = (int) $readTimeout;
+                    $sec = (int)$readTimeout;
                     $usec = ($readTimeout - $sec) * 100000;
                     stream_set_timeout($resource, $sec, $usec);
                 }
@@ -351,15 +352,15 @@ class SdkStreamHandler
 
         $context = [
             'http' => [
-                'method'           => $request->getMethod(),
-                'header'           => $headers,
+                'method' => $request->getMethod(),
+                'header' => $headers,
                 'protocol_version' => $request->getProtocolVersion(),
-                'ignore_errors'    => true,
-                'follow_location'  => 0,
+                'ignore_errors' => true,
+                'follow_location' => 0,
             ],
         ];
 
-        $body = (string) $request->getBody();
+        $body = (string)$request->getBody();
 
         if (!empty($body)) {
             $context['http']['content'] = $body;
@@ -371,140 +372,5 @@ class SdkStreamHandler
         $context['http']['header'] = rtrim($context['http']['header']);
 
         return $context;
-    }
-
-    private function add_proxy(RequestInterface $request, &$options, $value, &$params)
-    {
-        if (!is_array($value)) {
-            $options['http']['proxy'] = $value;
-        } else {
-            $scheme = $request->getUri()->getScheme();
-            if (isset($value[$scheme])) {
-                if (!isset($value['no'])
-                    || !\GuzzleHttp\is_host_in_noproxy(
-                        $request->getUri()->getHost(),
-                        $value['no']
-                    )
-                ) {
-                    $options['http']['proxy'] = $value[$scheme];
-                }
-            }
-        }
-    }
-
-    private function add_timeout(RequestInterface $request, &$options, $value, &$params)
-    {
-        if ($value > 0) {
-            $options['http']['timeout'] = $value;
-        }
-    }
-
-    private function add_verify(RequestInterface $request, &$options, $value, &$params)
-    {
-        if ($value === true) {
-            if (PHP_VERSION_ID < 50600) {
-                $options['ssl']['cafile'] = \GuzzleHttp\default_ca_bundle();
-            }
-        } elseif (is_string($value)) {
-            $options['ssl']['cafile'] = $value;
-            if (!file_exists($value)) {
-                throw new \RuntimeException("SSL CA bundle not found: $value");
-            }
-        } elseif ($value === false) {
-            $options['ssl']['verify_peer'] = false;
-            $options['ssl']['verify_peer_name'] = false;
-            return;
-        } else {
-            throw new \InvalidArgumentException('Invalid verify request option');
-        }
-
-        $options['ssl']['verify_peer'] = true;
-        $options['ssl']['verify_peer_name'] = true;
-        $options['ssl']['allow_self_signed'] = false;
-    }
-
-    private function add_cert(RequestInterface $request, &$options, $value, &$params)
-    {
-        if (is_array($value)) {
-            $options['ssl']['passphrase'] = $value[1];
-            $value = $value[0];
-        }
-
-        if (!file_exists($value)) {
-            throw new \RuntimeException("SSL certificate not found: {$value}");
-        }
-
-        $options['ssl']['local_cert'] = $value;
-    }
-
-    private function add_progress(RequestInterface $request, &$options, $value, &$params)
-    {
-        $this->addNotification(
-            $params,
-            function ($code, $a, $b, $c, $transferred, $total) use ($value) {
-                if ($code == STREAM_NOTIFY_PROGRESS) {
-                    $value($total, $transferred, null, null);
-                }
-            }
-        );
-    }
-
-    private function add_debug(RequestInterface $request, &$options, $value, &$params)
-    {
-        if ($value === false) {
-            return;
-        }
-
-        static $map = [
-            STREAM_NOTIFY_CONNECT       => 'CONNECT',
-            STREAM_NOTIFY_AUTH_REQUIRED => 'AUTH_REQUIRED',
-            STREAM_NOTIFY_AUTH_RESULT   => 'AUTH_RESULT',
-            STREAM_NOTIFY_MIME_TYPE_IS  => 'MIME_TYPE_IS',
-            STREAM_NOTIFY_FILE_SIZE_IS  => 'FILE_SIZE_IS',
-            STREAM_NOTIFY_REDIRECTED    => 'REDIRECTED',
-            STREAM_NOTIFY_PROGRESS      => 'PROGRESS',
-            STREAM_NOTIFY_FAILURE       => 'FAILURE',
-            STREAM_NOTIFY_COMPLETED     => 'COMPLETED',
-            STREAM_NOTIFY_RESOLVE       => 'RESOLVE',
-        ];
-        static $args = ['severity', 'message', 'message_code',
-            'bytes_transferred', 'bytes_max'];
-
-        $value = \GuzzleHttp\debug_resource($value);
-        $ident = $request->getMethod() . ' ' . $request->getUri()->withFragment('');
-        $this->addNotification(
-            $params,
-            function () use ($ident, $value, $map, $args) {
-                $passed = func_get_args();
-                $code = array_shift($passed);
-                fprintf($value, '<%s> [%s] ', $ident, $map[$code]);
-                foreach (array_filter($passed) as $i => $v) {
-                    fwrite($value, $args[$i] . ': "' . $v . '" ');
-                }
-                fwrite($value, "\n");
-            }
-        );
-    }
-
-    private function addNotification(array &$params, callable $notify)
-    {
-        if (!isset($params['notification'])) {
-            $params['notification'] = $notify;
-        } else {
-            $params['notification'] = $this->callArray([
-                $params['notification'],
-                $notify
-            ]);
-        }
-    }
-
-    private function callArray(array $functions)
-    {
-        return function () use ($functions) {
-            $args = func_get_args();
-            foreach ($functions as $fn) {
-                call_user_func_array($fn, $args);
-            }
-        };
     }
 }

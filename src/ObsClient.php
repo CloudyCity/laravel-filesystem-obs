@@ -10,7 +10,6 @@ use GuzzleHttp\Handler\CurlMultiHandler;
 use GuzzleHttp\Handler\Proxy;
 use GuzzleHttp\Promise\Promise;
 use Illuminate\Support\Facades\Log;
-use Obs\Internal\Resource\Constants;
 use Obs\Internal\Common\SdkCurlFactory;
 use Obs\Internal\Common\SdkStreamHandler;
 use Obs\Internal\Common\Model;
@@ -84,61 +83,61 @@ define('EMERGENCY', Logger::EMERGENCY);
  * @method Model optionsObject(array $args = []);
  * @method Model restoreObject(array $args = []);
  *
- * @method Promise createBucketAsync(array $args = [], callable $callback);
+ * @method Promise createBucketAsync(array $args, callable $callback);
  * @method Promise listBucketsAsync(callable $callback);
- * @method Promise deleteBucketAsync(array $args = [], callable $callback);
- * @method Promise listObjectsAsync(array $args = [], callable $callback);
- * @method Promise listVersionsAsync(array $args = [], callable $callback);
- * @method Promise headBucketAsync(array $args = [], callable $callback);
- * @method Promise getBucketMetadataAsync(array $args = [], callable $callback);
- * @method Promise getBucketLocationAsync(array $args = [], callable $callback);
- * @method Promise getBucketStorageInfoAsync(array $args = [], callable $callback);
- * @method Promise setBucketQuotaAsync(array $args = [], callable $callback);
- * @method Promise getBucketQuotaAsync(array $args = [], callable $callback);
- * @method Promise setBucketStoragePolicyAsync(array $args = [], callable $callback);
- * @method Promise getBucketStoragePolicyAsync(array $args = [], callable $callback);
- * @method Promise setBucketAclAsync(array $args = [], callable $callback);
- * @method Promise getBucketAclAsync(array $args = [], callable $callback);
- * @method Promise setBucketLoggingAsync(array $args = [], callable $callback);
- * @method Promise getBucketLoggingAsync(array $args = [], callable $callback);
- * @method Promise setBucketPolicyAsync(array $args = [], callable $callback);
- * @method Promise getBucketPolicyAsync(array $args = [], callable $callback);
- * @method Promise deleteBucketPolicyAsync(array $args = [], callable $callback);
- * @method Promise setBucketLifecycleAsync(array $args = [], callable $callback);
- * @method Promise getBucketLifecycleAsync(array $args = [], callable $callback);
- * @method Promise deleteBucketLifecycleAsync(array $args = [], callable $callback);
- * @method Promise setBucketWebsiteAsync(array $args = [], callable $callback);
- * @method Promise getBucketWebsiteAsync(array $args = [], callable $callback);
- * @method Promise deleteBucketWebsiteAsync(array $args = [], callable $callback);
- * @method Promise setBucketVersioningAsync(array $args = [], callable $callback);
- * @method Promise getBucketVersioningAsync(array $args = [], callable $callback);
- * @method Promise setBucketCorsAsync(array $args = [], callable $callback);
- * @method Promise getBucketCorsAsync(array $args = [], callable $callback);
- * @method Promise deleteBucketCorsAsync(array $args = [], callable $callback);
- * @method Promise setBucketNotificationAsync(array $args = [], callable $callback);
- * @method Promise getBucketNotificationAsync(array $args = [], callable $callback);
- * @method Promise setBucketTaggingAsync(array $args = [], callable $callback);
- * @method Promise getBucketTaggingAsync(array $args = [], callable $callback);
- * @method Promise deleteBucketTaggingAsync(array $args = [], callable $callback);
- * @method Promise optionsBucketAsync(array $args = [], callable $callback);
+ * @method Promise deleteBucketAsync(array $args, callable $callback);
+ * @method Promise listObjectsAsync(array $args, callable $callback);
+ * @method Promise listVersionsAsync(array $args, callable $callback);
+ * @method Promise headBucketAsync(array $args, callable $callback);
+ * @method Promise getBucketMetadataAsync(array $args, callable $callback);
+ * @method Promise getBucketLocationAsync(array $args, callable $callback);
+ * @method Promise getBucketStorageInfoAsync(array $args, callable $callback);
+ * @method Promise setBucketQuotaAsync(array $args, callable $callback);
+ * @method Promise getBucketQuotaAsync(array $args, callable $callback);
+ * @method Promise setBucketStoragePolicyAsync(array $args, callable $callback);
+ * @method Promise getBucketStoragePolicyAsync(array $args, callable $callback);
+ * @method Promise setBucketAclAsync(array $args, callable $callback);
+ * @method Promise getBucketAclAsync(array $args, callable $callback);
+ * @method Promise setBucketLoggingAsync(array $args, callable $callback);
+ * @method Promise getBucketLoggingAsync(array $args, callable $callback);
+ * @method Promise setBucketPolicyAsync(array $args, callable $callback);
+ * @method Promise getBucketPolicyAsync(array $args, callable $callback);
+ * @method Promise deleteBucketPolicyAsync(array $args, callable $callback);
+ * @method Promise setBucketLifecycleAsync(array $args, callable $callback);
+ * @method Promise getBucketLifecycleAsync(array $args, callable $callback);
+ * @method Promise deleteBucketLifecycleAsync(array $args, callable $callback);
+ * @method Promise setBucketWebsiteAsync(array $args, callable $callback);
+ * @method Promise getBucketWebsiteAsync(array $args, callable $callback);
+ * @method Promise deleteBucketWebsiteAsync(array $args, callable $callback);
+ * @method Promise setBucketVersioningAsync(array $args, callable $callback);
+ * @method Promise getBucketVersioningAsync(array $args, callable $callback);
+ * @method Promise setBucketCorsAsync(array $args, callable $callback);
+ * @method Promise getBucketCorsAsync(array $args, callable $callback);
+ * @method Promise deleteBucketCorsAsync(array $args, callable $callback);
+ * @method Promise setBucketNotificationAsync(array $args, callable $callback);
+ * @method Promise getBucketNotificationAsync(array $args, callable $callback);
+ * @method Promise setBucketTaggingAsync(array $args, callable $callback);
+ * @method Promise getBucketTaggingAsync(array $args, callable $callback);
+ * @method Promise deleteBucketTaggingAsync(array $args, callable $callback);
+ * @method Promise optionsBucketAsync(array $args, callable $callback);
  *
- * @method Promise putObjectAsync(array $args = [], callable $callback);
- * @method Promise getObjectAsync(array $args = [], callable $callback);
- * @method Promise copyObjectAsync(array $args = [], callable $callback);
- * @method Promise deleteObjectAsync(array $args = [], callable $callback);
- * @method Promise deleteObjectsAsync(array $args = [], callable $callback);
- * @method Promise getObjectMetadataAsync(array $args = [], callable $callback);
- * @method Promise setObjectAclAsync(array $args = [], callable $callback);
- * @method Promise getObjectAclAsync(array $args = [], callable $callback);
- * @method Promise initiateMultipartUploadAsync(array $args = [], callable $callback);
- * @method Promise uploadPartAsync(array $args = [], callable $callback);
- * @method Promise copyPartAsync(array $args = [], callable $callback);
- * @method Promise listPartsAsync(array $args = [], callable $callback);
- * @method Promise completeMultipartUploadAsync(array $args = [], callable $callback);
- * @method Promise abortMultipartUploadAsync(array $args = [], callable $callback);
- * @method Promise listMultipartUploadsAsync(array $args = [], callable $callback);
- * @method Promise optionsObjectAsync(array $args = [], callable $callback);
- * @method Promise restoreObjectAsync(array $args = [], callable $callback);
+ * @method Promise putObjectAsync(array $args, callable $callback);
+ * @method Promise getObjectAsync(array $args, callable $callback);
+ * @method Promise copyObjectAsync(array $args, callable $callback);
+ * @method Promise deleteObjectAsync(array $args, callable $callback);
+ * @method Promise deleteObjectsAsync(array $args, callable $callback);
+ * @method Promise getObjectMetadataAsync(array $args, callable $callback);
+ * @method Promise setObjectAclAsync(array $args, callable $callback);
+ * @method Promise getObjectAclAsync(array $args, callable $callback);
+ * @method Promise initiateMultipartUploadAsync(array $args, callable $callback);
+ * @method Promise uploadPartAsync(array $args, callable $callback);
+ * @method Promise copyPartAsync(array $args, callable $callback);
+ * @method Promise listPartsAsync(array $args, callable $callback);
+ * @method Promise completeMultipartUploadAsync(array $args, callable $callback);
+ * @method Promise abortMultipartUploadAsync(array $args, callable $callback);
+ * @method Promise listMultipartUploadsAsync(array $args, callable $callback);
+ * @method Promise optionsObjectAsync(array $args, callable $callback);
+ * @method Promise restoreObjectAsync(array $args, callable $callback);
  *
  */
 class ObsClient
@@ -185,7 +184,7 @@ class ObsClient
 
     const SignatureV2 = 'v2';
     const SignatureV4 = 'v4';
-    const SigantureObs = 'obs';
+    const SignatureObs = 'obs';
 
     const ObjectCreatedAll = 'ObjectCreated:*';
     const ObjectCreatedPut = 'ObjectCreated:Put';
@@ -199,11 +198,11 @@ class ObsClient
     use Internal\SendRequestTrait;
     use Internal\GetResponseTrait;
 
-    private $factorys;
+    private $factories;
 
     public function __construct(array $config = [])
     {
-        $this->factorys = [];
+        $this->factories = [];
 
         $this->ak = strval($config['key']);
         $this->sk = strval($config['secret']);
@@ -337,8 +336,8 @@ class ObsClient
 
     public function close()
     {
-        if ($this->factorys) {
-            foreach ($this->factorys as $factory) {
+        if ($this->factories) {
+            foreach ($this->factories as $factory) {
                 $factory->close();
             }
         }
@@ -346,7 +345,7 @@ class ObsClient
 
     public function initLog(array $logConfig = [])
     {
-        Log::info($logConfig);
+        Log::info(json_encode($logConfig));
 
         $msg = [];
         $msg[] = '[OBS SDK Version=' . self::SDK_VERSION;
@@ -356,23 +355,23 @@ class ObsClient
         Log::warning(implode("];[", $msg));
     }
 
-    private static function choose_handler($obsclient)
+    private static function choose_handler($obsClient)
     {
         $handler = null;
         if (function_exists('curl_multi_exec') && function_exists('curl_exec')) {
             $f1 = new SdkCurlFactory(50);
             $f2 = new SdkCurlFactory(3);
-            $obsclient->factorys[] = $f1;
-            $obsclient->factorys[] = $f2;
+            $obsClient->factorys[] = $f1;
+            $obsClient->factorys[] = $f2;
             $handler = Proxy::wrapSync(new CurlMultiHandler(['handle_factory' => $f1]), new CurlHandler(['handle_factory' => $f2]));
         } elseif (function_exists('curl_exec')) {
             $f = new SdkCurlFactory(3);
-            $obsclient->factorys[] = $f;
+            $obsClient->factorys[] = $f;
             $handler = new CurlHandler(['handle_factory' => $f]);
         } elseif (function_exists('curl_multi_exec')) {
             $f = new SdkCurlFactory(50);
-            $obsclient->factorys[] = $f;
-            $handler = new CurlMultiHandler(['handle_factory' => $f1]);
+            $obsClient->factorys[] = $f;
+            $handler = new CurlMultiHandler(['handle_factory' => $f]);
         }
 
         if (ini_get('allow_url_fopen')) {
