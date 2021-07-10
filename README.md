@@ -16,23 +16,8 @@ $ composer require "cloudycity/laravel-filesystem-obs:^3.3.1" -vvv
 
 # Configuration
 
+1. Add obs config to `config\filesystems.php`.
 
-1.(Optional) If you are using laravel which version < 5.5, you need register the `Obs\ObsServiceProvider` in your `config/app.php` file:
-
-  ```php
-  'providers' => [
-      // Other service providers...
-      Obs\ObsServiceProvider::class,
-  ],
-  ```
-
-2.Publish config.php or create it manually.
-
-```shell
-php artisan vendor:publish --provider="Obs\ObsServiceProvider" --tag=filesystems-config
-```
-
-`config/filesystems.php`
 ```php
  <?php
 
@@ -53,6 +38,15 @@ php artisan vendor:publish --provider="Obs\ObsServiceProvider" --tag=filesystems
      ]
  ];
  ```
+
+2. (Optional) If you are using laravel which version < 5.5, you need register the `Obs\ObsServiceProvider` in your `config/app.php` file:
+
+  ```php
+  'providers' => [
+      // Other service providers...
+      Obs\ObsServiceProvider::class,
+  ],
+  ```
 
 # Usage
 

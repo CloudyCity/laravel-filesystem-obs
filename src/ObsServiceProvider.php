@@ -30,10 +30,6 @@ class ObsServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        $this->publishes([
-            __DIR__ . '/config/filesystems.php' => config_path('filesystems.php')
-        ], 'filesystems-config');
-
         Storage::extend('obs', function ($app, $config) {
             $debug = $config['debug'] ?? false;
             $endpoint = $config['endpoint'] ?? '';
