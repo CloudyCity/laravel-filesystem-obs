@@ -107,7 +107,7 @@ class DefaultSignature extends AbstractSignature
             ksort($pathArgs);
             $_pathArgs = [];
             foreach ($pathArgs as $key => $value) {
-                if (in_array(strtolower($key), $constants::ALLOWED_RESOURCE_PARAMTER_NAMES)) {
+                if (in_array(strtolower($key), $constants::ALLOWED_RESOURCE_PARAMETER_NAMES)) {
                     $_pathArgs[] = $value === null || $value === '' ? $key : $key . '=' . urldecode($value);
                 }
             }

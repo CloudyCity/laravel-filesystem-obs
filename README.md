@@ -11,7 +11,7 @@ Only compatible with Guzzle v7. If you must use Guzzle v6, check this out [dscma
 # Installation
 
 ```shell
-$ composer require "cloudycity/laravel-filesystem-obs" -vvv
+$ composer require "cloudycity/laravel-filesystem-obs:^3.3.1" -vvv
 ```
 
 # Configuration
